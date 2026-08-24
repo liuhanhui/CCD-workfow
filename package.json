@@ -1,0 +1,31 @@
+{
+  "name": "ccd-workflow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A minimal Claude Code workflow installer",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "ccd": "bin/ccd.mjs"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "unbuild",
+    "start": "node bin/ccd.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "cac": "^6.7.14"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/picomatch": "^4.0.3",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "unbuild": "^3.6.1",
+    "vitest": "^3.1.1"
+  }
+}
