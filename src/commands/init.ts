@@ -8,10 +8,12 @@ Claude Code 配置目录中，
 */
 
 import { existsSync } from 'node:fs'
-import { cp, mkdir } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { createDefaultConfig, writeConfig } from '../utils/config.js'
+import { injectConfigVariables } from '../utils/template.js'
 
 export function resolvePackageRoot(moduleUrl: string): string {
   const currentDir = dirname(fileURLToPath(moduleUrl))
@@ -35,6 +37,7 @@ const packageRoot = resolvePackageRoot(import.meta.url)
 export interface InitOptions {
   installDir?: string
   force?: boolean
+  backend?: string
 }
 
 export interface InstallResult {
@@ -46,9 +49,15 @@ export async function installM0(options: InitOptions = {}): Promise<InstallResul
   const installDir = options.installDir ?? join(homedir(), '.claude')
   const commandPath = join(installDir, 'commands', 'ccd', 'go.md')
   const templatePath = join(packageRoot, 'templates', 'commands', 'go.md')
+  const config = createDefaultConfig(options.backend)
 
   await mkdir(dirname(commandPath), { recursive: true })
-  await cp(templatePath, commandPath, { force: options.force ?? true })
+  await writeConfig(installDir, config)
+
+  if (options.force || !existsSync(commandPath)) {
+    const template = await readFile(templatePath, 'utf8')
+    await writeFile(commandPath, injectConfigVariables(template, config, installDir), 'utf8')
+  }
 
   return { commandPath, installed: true }
 }
