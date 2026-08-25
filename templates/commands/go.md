@@ -53,6 +53,18 @@ For an **M+** task:
 
 4. Create `.ccd/tasks/{task-name}/plan.md` with the affected files, implementation steps, and verification steps.
 
+## M3: Codex analysis
+
+For an M+ task whose configured primary external model is `codex`, run the installed wrapper before finalizing `plan.md`:
+
+```bash
+node "{{WRAPPER_PATH}}" --backend codex --workdir "$(pwd)" --prompt "Analyze this task and identify affected files, implementation risks, and verification steps: $ARGUMENTS"
+```
+
+The wrapper invokes `codex exec` in a read-only sandbox. Incorporate useful findings into `plan.md`; do not ask Codex to modify files.
+
+If the configured model is not `codex`, state that M3 currently supports only Codex analysis and continue with Claude's own analysis.
+
 ## Hard stop for M+ tasks
 
 After creating the task files and presenting the plan, stop and ask the user to approve it.
