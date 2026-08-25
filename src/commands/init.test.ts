@@ -30,13 +30,13 @@ describe('installM0', () => {
   it('creates configuration and injects its values into the command template', async () => {
     const installDir = await mkdtemp(join(tmpdir(), 'ccd-workflow-'))
 
-    await installM0({ installDir, backend: 'gemini' })
+    await installM0({ installDir, backend: 'deepseek' })
 
     await expect(readConfig(installDir)).resolves.toMatchObject({
       general: { version: '0.2.0' },
-      routing: { backendPrimary: 'gemini' },
+      routing: { backendPrimary: 'deepseek' },
     })
     await expect(readFile(join(installDir, 'commands', 'ccd', 'go.md'), 'utf8'))
-      .resolves.toContain('Primary external model: gemini')
+      .resolves.toContain('Primary external model: deepseek')
   })
 })
