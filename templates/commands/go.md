@@ -6,7 +6,12 @@ description: "CCD smart entry — inspect context, classify the task, then proce
 
 $ARGUMENTS
 
-## M0 workflow
+## Runtime configuration
+
+- Primary external model: {{BACKEND_PRIMARY}}
+- CCD installation directory: {{CCD_HOME}}
+
+## M1 workflow
 
 1. Read the repository context:
    - Run `git status`.
