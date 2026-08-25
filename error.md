@@ -1,3 +1,7 @@
+### wrapper.ts的作用
+<img width="1287" height="941" alt="image" src="https://github.com/user-attachments/assets/ef524560-e4e6-48ee-91db-b97ec7cb721e" />
+
+
 ### 单元测试基本操作
 <img width="2104" height="935" alt="image" src="https://github.com/user-attachments/assets/a55052bc-ead9-46ea-9642-776cabeed3bc" />
 
