@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { installM0, resolvePackageRoot } from './init.js'
+import { readConfig } from '../utils/config.js'
 
 describe('installM0', () => {
   it('installs the go command template into the target Claude directory', async () => {
@@ -24,5 +25,18 @@ describe('installM0', () => {
     const resolvedRoot = resolvePackageRoot(pathToFileURL(join(distDir, 'cli.mjs')).href)
 
     expect(resolvedRoot).toBe(root)
+  })
+
+  it('creates configuration and injects its values into the command template', async () => {
+    const installDir = await mkdtemp(join(tmpdir(), 'ccd-workflow-'))
+
+    await installM0({ installDir, backend: 'gemini' })
+
+    await expect(readConfig(installDir)).resolves.toMatchObject({
+      general: { version: '0.2.0' },
+      routing: { backendPrimary: 'gemini' },
+    })
+    await expect(readFile(join(installDir, 'commands', 'ccd', 'go.md'), 'utf8'))
+      .resolves.toContain('Primary external model: gemini')
   })
 })
