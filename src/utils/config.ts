@@ -33,7 +33,7 @@ export function getConfigPath(installDir: string): string {
   return join(installDir, '.ccd', 'config.toml')
 }
 
-export function createDefaultConfig(backendPrimary = 'codex'): CcdConfig {
+export function createDefaultConfig(backendPrimary = 'deepseek'): CcdConfig {
   return {
     general: {
       version: '0.2.0',
