@@ -15,5 +15,8 @@ describe('/ccd:go template', () => {
     expect(template).toContain('.ccd/tasks/{task-name}/task.json')
     expect(template).toContain('"status": "planning"')
     expect(template).toContain('## Hard stop for M+ tasks')
+    expect(template).toContain('## M3: Codex analysis')
+    expect(template).toContain('{{WRAPPER_PATH}}')
+    expect(template).toContain('--backend codex')
   })
 })
