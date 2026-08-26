@@ -39,4 +39,19 @@ describe('installM0', () => {
     await expect(readFile(join(installDir, 'commands', 'ccd', 'go.md'), 'utf8'))
       .resolves.toContain('Primary external model: deepseek')
   })
+
+  it('installs and registers the workflow-state hook', async () => {
+    const installDir = await mkdtemp(join(tmpdir(), 'ccd-workflow-'))
+
+    await installM0({ installDir })
+
+    await expect(readFile(join(installDir, 'hooks', 'ccd', 'workflow-state.cjs'), 'utf8'))
+      .resolves.toContain('UserPromptSubmit')
+
+    const settings = JSON.parse(await readFile(join(installDir, 'settings.json'), 'utf8')) as {
+      hooks: { UserPromptSubmit: Array<{ hooks: Array<{ command: string }> }> }
+    }
+    expect(settings.hooks.UserPromptSubmit[0].hooks[0].command)
+      .toBe(`node "${join(installDir, 'hooks', 'ccd', 'workflow-state.cjs')}"`)
+  })
 })
