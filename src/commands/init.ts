@@ -8,8 +8,8 @@ Claude Code 配置目录中，
 */
 
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { createDefaultConfig, writeConfig } from '../utils/config.js'
@@ -42,13 +42,58 @@ export interface InitOptions {
 
 export interface InstallResult {
   commandPath: string
+  wrapperPath: string
+  hookPath: string
   installed: boolean
 }
 
+async function installWorkflowStateHook(installDir: string): Promise<string> {
+  const hookPath = join(installDir, 'hooks', 'ccd', 'workflow-state.cjs')
+  const sourcePath = join(packageRoot, 'templates', 'hooks', 'workflow-state.cjs')
+  await mkdir(dirname(hookPath), { recursive: true })
+  await copyFile(sourcePath, hookPath)
+  return hookPath
+}
+
+async function registerWorkflowStateHook(installDir: string, hookPath: string): Promise<void> {
+  const settingsPath = join(installDir, 'settings.json')
+  let settings: Record<string, unknown> = {}
+
+  if (existsSync(settingsPath)) {
+    settings = JSON.parse(await readFile(settingsPath, 'utf8')) as Record<string, unknown>
+  }
+
+  const hooks = (settings.hooks ?? {}) as Record<string, unknown>
+  const userPromptSubmit = (hooks.UserPromptSubmit ?? []) as Array<Record<string, unknown>>
+  const command = `node "${hookPath}"`
+  const existing = userPromptSubmit.some((entry) =>
+    Array.isArray(entry.hooks)
+    && entry.hooks.some((hook: unknown) =>
+      typeof hook === 'object'
+      && hook !== null
+      && 'command' in hook
+      && (hook as { command?: unknown }).command === command,
+    ),
+  )
+
+  if (!existing) {
+    userPromptSubmit.push({
+      matcher: '',
+      hooks: [{ type: 'command', command }],
+    })
+  }
+
+  hooks.UserPromptSubmit = userPromptSubmit
+  settings.hooks = hooks
+  await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8')
+}
+
 export async function installM0(options: InitOptions = {}): Promise<InstallResult> {
-  const installDir = options.installDir ?? join(homedir(), '.claude')
+  const installDir = resolve(options.installDir ?? join(homedir(), '.claude'))
   const commandPath = join(installDir, 'commands', 'ccd', 'go.md')
   const templatePath = join(packageRoot, 'templates', 'commands', 'go.md')
+  const wrapperPath = join(installDir, 'bin', 'ccd-wrapper.mjs')
+  const wrapperSource = join(packageRoot, 'dist', 'wrapper.mjs')
   const config = createDefaultConfig(options.backend)
 
   await mkdir(dirname(commandPath), { recursive: true })
@@ -59,7 +104,15 @@ export async function installM0(options: InitOptions = {}): Promise<InstallResul
     await writeFile(commandPath, injectConfigVariables(template, config, installDir), 'utf8')
   }
 
-  return { commandPath, installed: true }
+  if (existsSync(wrapperSource)) {
+    await mkdir(dirname(wrapperPath), { recursive: true })
+    await copyFile(wrapperSource, wrapperPath)
+  }
+
+  const hookPath = await installWorkflowStateHook(installDir)
+  await registerWorkflowStateHook(installDir, hookPath)
+
+  return { commandPath, wrapperPath, hookPath, installed: true }
 }
 
 export async function init(options: InitOptions = {}): Promise<void> {
