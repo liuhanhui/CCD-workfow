@@ -1,3 +1,6 @@
+### deepseek cli
+<img width="927" height="327" alt="image" src="https://github.com/user-attachments/assets/be6cf98e-78fb-485a-ac8f-47071ff13413" />
+
 
 ### hook挂载
 <img width="2340" height="1095" alt="image" src="https://github.com/user-attachments/assets/269f125c-2379-4b36-aeaf-c2ff2912f6c6" />
