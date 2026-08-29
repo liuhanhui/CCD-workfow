@@ -1,5 +1,7 @@
 ### deepseek cli
+- 之前选deepseek是不得已而为之，后来可以用gemini换成agy后，决定仍然采用antigravity
 <img width="927" height="327" alt="image" src="https://github.com/user-attachments/assets/be6cf98e-78fb-485a-ac8f-47071ff13413" />
+<img width="892" height="418" alt="image" src="https://github.com/user-attachments/assets/bbdf2823-b874-46f5-a110-25ed086601d0" />
 
 
 ### hook挂载
