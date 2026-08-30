@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildCodexArgs, parseCodexEvents } from './wrapper'
+import {
+  buildAntigravityArgs,
+  buildCodexArgs,
+  parseAntigravityOutput,
+  parseCodexEvents,
+} from './wrapper'
 
 describe('Codex wrapper', () => {
   it('builds a non-interactive, read-only Codex command', () => {
@@ -27,6 +32,31 @@ describe('Codex wrapper', () => {
     expect(parseCodexEvents(output)).toEqual({
       sessionId: 'thread-123',
       message: 'Repository uses TypeScript.',
+    })
+  })
+})
+
+describe('Antigravity wrapper', () => {
+  it('builds a non-interactive planning command with JSON output', () => {
+    expect(buildAntigravityArgs('Review this task.')).toEqual([
+      '--mode',
+      'plan',
+      '--sandbox',
+      '--output-format',
+      'json',
+      '-p',
+      'Review this task.',
+    ])
+  })
+
+  it('returns the response and conversation ID from Antigravity JSON output', () => {
+    expect(parseAntigravityOutput(JSON.stringify({
+      conversation_id: 'conversation-123',
+      status: 'SUCCESS',
+      response: 'The change affects src/wrapper.ts.',
+    }))).toEqual({
+      sessionId: 'conversation-123',
+      message: 'The change affects src/wrapper.ts.',
     })
   })
 })
