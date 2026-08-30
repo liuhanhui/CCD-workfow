@@ -30,14 +30,14 @@ describe('installM0', () => {
   it('creates configuration and injects its values into the command template', async () => {
     const installDir = await mkdtemp(join(tmpdir(), 'ccd-workflow-'))
 
-    await installM0({ installDir, backend: 'deepseek' })
+    await installM0({ installDir, backend: 'antigravity' })
 
     await expect(readConfig(installDir)).resolves.toMatchObject({
       general: { version: '0.2.0' },
-      routing: { backendPrimary: 'deepseek' },
+      routing: { backendPrimary: 'antigravity' },
     })
     await expect(readFile(join(installDir, 'commands', 'ccd', 'go.md'), 'utf8'))
-      .resolves.toContain('Primary external model: deepseek')
+      .resolves.toContain('Primary external model: antigravity')
   })
 
   it('installs and registers the workflow-state hook', async () => {
@@ -55,3 +55,4 @@ describe('installM0', () => {
       .toBe(`node "${join(installDir, 'hooks', 'ccd', 'workflow-state.cjs')}"`)
   })
 })
+
