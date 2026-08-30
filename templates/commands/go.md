@@ -63,10 +63,24 @@ node "{{WRAPPER_PATH}}" --backend codex --workdir "$(pwd)" --prompt "Analyze thi
 
 The wrapper invokes `codex exec` in a read-only sandbox. Incorporate useful findings into `plan.md`; do not ask Codex to modify files.
 
-If the configured model is not `codex`, state that M3 currently supports only Codex analysis and continue with Claude's own analysis.
+
+If the configured model is not `codex`, skip this Codex-specific analysis.
+
+## M5: Antigravity analysis
+
+For an M+ task whose configured primary external model is `antigravity`, run the installed wrapper before finalizing `plan.md`:
+
+```bash
+node "{{WRAPPER_PATH}}" --backend antigravity --workdir "$(pwd)" --prompt "Analyze this task and identify affected files, implementation risks, alternatives, and verification steps: $ARGUMENTS"
+```
+
+The wrapper executes `agy -p` in the current project with JSON output, `--mode plan`, and terminal sandboxing. It can inspect the repository, but must not modify application files. Incorporate useful findings into `plan.md`.
+
+If Antigravity is not installed, state the missing prerequisite and continue with Claude's own analysis.
 
 ## Hard stop for M+ tasks
 
 After creating the task files and presenting the plan, stop and ask the user to approve it.
 
 Do not modify application code for an M+ task until the user explicitly approves the plan.
+
