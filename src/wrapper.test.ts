@@ -4,6 +4,7 @@ import {
   buildCodexArgs,
   parseAntigravityOutput,
   parseCodexEvents,
+  runParallelAnalyses,
 } from './wrapper'
 
 describe('Codex wrapper', () => {
@@ -57,6 +58,37 @@ describe('Antigravity wrapper', () => {
     }))).toEqual({
       sessionId: 'conversation-123',
       message: 'The change affects src/wrapper.ts.',
+    })
+  })
+})
+
+describe('parallel analysis', () => {
+  it('starts Codex and Antigravity before either result is available, then combines both results', async () => {
+    const calls: string[] = []
+    let resolveCodex: (() => void) | undefined
+    let resolveAntigravity: (() => void) | undefined
+    const resultPromise = runParallelAnalyses(
+      { prompt: 'Analyze the task.', workdir: 'C:/work/project' },
+      {
+        codex: () => new Promise(resolve => {
+          calls.push('codex')
+          resolveCodex = () => resolve({ sessionId: 'codex-1', message: 'Codex finding.' })
+        }),
+        antigravity: () => new Promise(resolve => {
+          calls.push('antigravity')
+          resolveAntigravity = () => resolve({ sessionId: 'agy-1', message: 'Antigravity finding.' })
+        }),
+      },
+    )
+
+    expect(calls).toEqual(['codex', 'antigravity'])
+    resolveCodex?.()
+    resolveAntigravity?.()
+
+    await expect(resultPromise).resolves.toEqual({
+      codex: { sessionId: 'codex-1', message: 'Codex finding.' },
+      antigravity: { sessionId: 'agy-1', message: 'Antigravity finding.' },
+      summary: expect.stringContaining('Codex finding.'),
     })
   })
 })
