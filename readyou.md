@@ -75,6 +75,18 @@ The wrapper invokes `agy -p` with `--output-format json`, `--mode plan`, and
 the supplied work directory, allowing Antigravity to inspect the repository
 while the plan-mode prompt forbids application-file changes.
 
+To run Codex and Antigravity concurrently for M+ task analysis, install and
+authenticate both CLIs, then select the `parallel` backend:
+
+```powershell
+node bin/ccd.mjs init --backend parallel --force
+node "$HOME\.claude\bin\ccd-wrapper.mjs" --backend parallel --workdir "$($PWD.Path)" --prompt "Review this task: ..."
+```
+
+The wrapper starts both processes with `Promise.all` and returns one JSON object
+with the separate `codex` and `antigravity` results plus a combined summary.
+Claude validates agreements and differences before updating `plan.md`.
+
 ## M4: Persistent task context
 
 M4 installs a `UserPromptSubmit` Claude Code Hook at
