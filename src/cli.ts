@@ -7,7 +7,7 @@ const cli = cac('ccd')
 cli
   .command('init', 'Install the CCD M0 command into Claude Code')
   .option('--install-dir <path>', 'Target Claude directory; defaults to ~/.claude')
-  .option('--backend <name>', 'Primary external model; defaults to deepseek')
+  .option('--backend <name>', 'Primary external model; defaults to antigravity')
   .option('--force', 'Overwrite the existing command template')
   .action(async options => init(options))
 
