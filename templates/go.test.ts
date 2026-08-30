@@ -21,5 +21,7 @@ describe('/ccd:go template', () => {
     expect(template).toContain('## M5: Antigravity analysis')
     expect(template).toContain('--backend antigravity')
     expect(template).toContain('agy -p')
+    expect(template).toContain('--backend parallel')
+    expect(template).toContain('both analyses')
   })
 })
