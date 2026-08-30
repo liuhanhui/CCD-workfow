@@ -14,6 +14,17 @@ export interface AnalysisResult {
   message: string
 }
 
+export interface ParallelAnalysisResult {
+  codex: AnalysisResult
+  antigravity: AnalysisResult
+  summary: string
+}
+
+export interface AnalysisRunners {
+  codex: (options: AnalysisRunOptions) => Promise<AnalysisResult>
+  antigravity: (options: AnalysisRunOptions) => Promise<AnalysisResult>
+}
+
 interface CodexEvent {
   type?: string
   thread_id?: string
@@ -152,6 +163,41 @@ export async function runAntigravity(options: AnalysisRunOptions): Promise<Analy
   })
 }
 
+export function combineAnalyses(
+  codex: AnalysisResult,
+  antigravity: AnalysisResult,
+): ParallelAnalysisResult {
+  return {
+    codex,
+    antigravity,
+    summary: [
+      'Codex and Antigravity completed independent analyses.',
+      'Review agreements and resolve differences before finalizing the plan.',
+      '',
+      '## Codex',
+      codex.message,
+      '',
+      '## Antigravity',
+      antigravity.message,
+    ].join('\n'),
+  }
+}
+
+export async function runParallelAnalyses(
+  options: AnalysisRunOptions,
+  runners: AnalysisRunners = {
+    codex: runCodex,
+    antigravity: runAntigravity,
+  },
+): Promise<ParallelAnalysisResult> {
+  const [codex, antigravity] = await Promise.all([
+    runners.codex(options),
+    runners.antigravity(options),
+  ])
+
+  return combineAnalyses(codex, antigravity)
+}
+
 function readArgument(name: string): string | null {
   const index = process.argv.indexOf(name)
   return index >= 0 ? process.argv[index + 1] ?? null : null
@@ -163,7 +209,7 @@ async function main(): Promise<void> {
   const prompt = readArgument('--prompt')
 
   if (!workdir || !prompt) {
-    throw new Error('Usage: ccd-wrapper --backend <codex|antigravity> --workdir <path> --prompt <text>')
+    throw new Error('Usage: ccd-wrapper --backend <codex|antigravity|parallel> --workdir <path> --prompt <text>')
   }
 
   if (backend === 'codex') {
@@ -174,7 +220,11 @@ async function main(): Promise<void> {
     console.log(JSON.stringify(await runAntigravity({ workdir, prompt })))
     return
   }
-  throw new Error('M5 supports --backend codex or --backend antigravity.')
+  if (backend === 'parallel') {
+    console.log(JSON.stringify(await runParallelAnalyses({ workdir, prompt })))
+    return
+  }
+  throw new Error('M5 supports --backend codex, --backend antigravity, or --backend parallel.')
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
