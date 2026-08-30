@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { resolve } from 'node:path'
 import { createCodexProcessSpec } from './codex/process-spec.js'
 
-export interface CodexRunOptions {
+export interface AnalysisRunOptions {
   prompt: string
   workdir: string
 }
 
-export interface CodexResult {
+export interface AnalysisResult {
   sessionId: string | null
   message: string
 }
@@ -23,7 +23,7 @@ interface CodexEvent {
   }
 }
 
-export function buildCodexArgs(options: CodexRunOptions): string[] {
+export function buildCodexArgs(options: AnalysisRunOptions): string[] {
   return [
     'exec',
     '--json',
@@ -35,7 +35,19 @@ export function buildCodexArgs(options: CodexRunOptions): string[] {
   ]
 }
 
-export function parseCodexEvents(output: string): CodexResult {
+export function buildAntigravityArgs(prompt: string): string[] {
+  return [
+    '--mode',
+    'plan',
+    '--sandbox',
+    '--output-format',
+    'json',
+    '-p',
+    prompt,
+  ]
+}
+
+export function parseCodexEvents(output: string): AnalysisResult {
   let sessionId: string | null = null
   let message = ''
 
@@ -57,7 +69,7 @@ export function parseCodexEvents(output: string): CodexResult {
   return { sessionId, message }
 }
 
-export async function runCodex(options: CodexRunOptions): Promise<CodexResult> {
+export async function runCodex(options: AnalysisRunOptions): Promise<AnalysisResult> {
   return new Promise((resolveResult, reject) => {
     const spec = createCodexProcessSpec(buildCodexArgs(options))
     const process = spawn(spec.command, spec.args, {
@@ -88,6 +100,58 @@ export async function runCodex(options: CodexRunOptions): Promise<CodexResult> {
   })
 }
 
+interface AntigravityOutput {
+  conversation_id?: string
+  response?: string
+  status?: string
+  error?: string
+}
+
+export function parseAntigravityOutput(output: string): AnalysisResult {
+  const result = JSON.parse(output) as AntigravityOutput
+  if (result.status !== 'SUCCESS' || typeof result.response !== 'string') {
+    throw new Error(result.error ?? 'Antigravity did not return a successful response.')
+  }
+
+  return {
+    sessionId: result.conversation_id ?? null,
+    message: result.response,
+  }
+}
+
+export async function runAntigravity(options: AnalysisRunOptions): Promise<AnalysisResult> {
+  return new Promise((resolveResult, reject) => {
+    const child = spawn('agy', buildAntigravityArgs(options.prompt), {
+      cwd: options.workdir,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let stdout = ''
+    let stderr = ''
+
+    if (!child.stdout || !child.stderr) {
+      reject(new Error('Failed to capture Antigravity output streams.'))
+      return
+    }
+
+    child.stdout.on('data', chunk => { stdout += chunk.toString() })
+    child.stderr.on('data', chunk => { stderr += chunk.toString() })
+    child.on('error', error => reject(error))
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`Antigravity CLI exited with code ${code}: ${stderr.trim()}`))
+        return
+      }
+
+      try {
+        resolveResult(parseAntigravityOutput(stdout))
+      }
+      catch (error) {
+        reject(error)
+      }
+    })
+  })
+}
+
 function readArgument(name: string): string | null {
   const index = process.argv.indexOf(name)
   return index >= 0 ? process.argv[index + 1] ?? null : null
@@ -98,14 +162,19 @@ async function main(): Promise<void> {
   const workdir = readArgument('--workdir')
   const prompt = readArgument('--prompt')
 
-  if (backend !== 'codex') {
-    throw new Error('M3 supports only --backend codex.')
-  }
   if (!workdir || !prompt) {
-    throw new Error('Usage: ccd-wrapper --backend codex --workdir <path> --prompt <text>')
+    throw new Error('Usage: ccd-wrapper --backend <codex|antigravity> --workdir <path> --prompt <text>')
   }
 
-  console.log(JSON.stringify(await runCodex({ workdir, prompt })))
+  if (backend === 'codex') {
+    console.log(JSON.stringify(await runCodex({ workdir, prompt })))
+    return
+  }
+  if (backend === 'antigravity') {
+    console.log(JSON.stringify(await runAntigravity({ workdir, prompt })))
+    return
+  }
+  throw new Error('M5 supports --backend codex or --backend antigravity.')
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
